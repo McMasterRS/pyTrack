@@ -8,7 +8,7 @@ from extensions.dragTable import TableWidgetDragRows
 class ScriptsGUI:
     def __init__(self, master):
         self.master = master
-        self.window = uic.loadUi("./scriptUI.ui")
+        self.window = uic.loadUi("./ui/scriptUI.ui")
         
         self.btScript = self.window.findChild(QtGui.QPushButton, "btScript")
         self.btScript.clicked.connect(self.addScript)

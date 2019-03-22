@@ -17,7 +17,7 @@ class MotionGUI:
                            """
         data = []
         
-        self.window = uic.loadUi("./motionGui.ui")
+        self.window = uic.loadUi("./ui/motionGui.ui")
         self.window.show()
         
         # TODO - Add data validation to this to make sure it gets a valid file
