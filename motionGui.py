@@ -1,10 +1,12 @@
 from PyQt5 import QtGui, uic, QtCore
+from PyQt5.QtWidgets import QFileDialog
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import sys
 import numpy as np
 import c3d
-from GLTextItem import GLTextItem
+from extensions.GLTextItem import GLTextItem
+from scriptsGui import ScriptsGUI
 
 class MotionGUI:
     def __init__(self):
@@ -14,17 +16,23 @@ class MotionGUI:
                                QListWidget:item:selected:!disabled {background: #cde8ff; color: black} 
                            """
         data = []
-        fl = "./testData/Eb015pi.c3d"
+        
+        self.window = uic.loadUi("./motionGui.ui")
+        self.window.show()
+        
+        # TODO - Add data validation to this to make sure it gets a valid file
+        
+        dialog = QFileDialog()
+        fl = dialog.getOpenFileName(self.window, "Open File")[0]
+        #fl = "./testData/Eb015pi.c3d"
         reader = c3d.Reader(open(fl, 'rb'))
+            
         for i, points, analog in reader.read_frames():
             data.append(points[:, 0:3])
         self.posNP = np.array(data)
         self.nameList = []
         for i, item in enumerate(self.posNP[0]):
             self.nameList.append(str(i))
-        
-        self.window = uic.loadUi("./motionGui.ui")
-        self.window.show()
         
         self.plot = self.window.findChild(gl.GLViewWidget, "plot")
         self.plot.setCameraPosition(distance = np.max(self.posNP) * 1.1)
@@ -37,7 +45,6 @@ class MotionGUI:
         self.plot.addItem(self.text)
         
         self.frame = 0
-        self.hover = 0  
         
         self.slideFrame = self.window.findChild(QtGui.QSlider, "slideFrame")
         self.slideFrame.setMaximum(len(data)-1)
@@ -57,9 +64,7 @@ class MotionGUI:
             item = QtGui.QListWidgetItem(name, self.pointList)
         self.pointList.selectAll()
         self.pointList.setStyleSheet(self.comboStyle)
-        self.pointList.setMouseTracking(True)
-        self.pointList.itemEntered.connect(self.cellHover)
-            
+
         self.linkList = self.window.findChild(QtGui.QTableWidget, "linkList")
         self.linkList.setStyleSheet(self.comboStyle)
         
@@ -79,6 +84,11 @@ class MotionGUI:
         
         self.ckPause = self.window.findChild(QtGui.QCheckBox, "ckPause")
         self.ckText = self.window.findChild(QtGui.QCheckBox, "ckText")
+        
+        self.btScripts = self.window.findChild(QtGui.QPushButton, "btScripts")
+        self.btScripts.clicked.connect(self.openScripts)
+
+        self.scripts = ScriptsGUI(self)
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
@@ -94,13 +104,13 @@ class MotionGUI:
         self.plotData()
         
     def plotData(self):
-    
+        data = self.scripts.parseData(self.posNP[self.frame])
         # Draw points
         pos = [x.row() for x in self.pointList.selectedIndexes()]
-        self.scatter.setData(pos = self.posNP[self.frame][pos])
+        self.scatter.setData(pos = data[pos])
 
         # Draw lines
-        lines = [[self.posNP[self.frame][item[0]], self.posNP[self.frame][item[1]]] for item in self.links]
+        lines = [[data[item[0]], data[item[1]]] for item in self.links]
 
         if len(lines) > 0:
             lines = np.array(lines)
@@ -108,22 +118,11 @@ class MotionGUI:
         
         if self.ckText.checkState():
             text = [str(x.row()) for x in self.pointList.selectedIndexes()]
-            self.text.setData(self.posNP[self.frame][pos], text)
+            self.text.setData(data[pos], text)
         else:
             self.text.setData([],[])
-            
-        
-    def cellHover(self, row):
-        self.hover = self.pointList.row(row)
-        
-    def hoverReset(self):
-        self.hover = -1
     
     def setFrame(self):
-        #if self.slideFrame.value() > self.slideEnd.value():
-        #    self.slideFrame.setValue(self.slideEnd.value())
-        #if self.slideFrame.value() < self.slideStart.value():
-        #    self.slideFrame.setValue(self.slideStart.value())
         self.frame = self.slideFrame.value()
         
     def setFrameMax(self):
@@ -154,6 +153,9 @@ class MotionGUI:
         # Clear the link lines if none are left
         if len(self.links) == 0:
             self.lines.setData(pos = np.array([[0,0,0],[0,0,0]]))
+            
+    def openScripts(self):
+        self.scripts.window.show()
     
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
