@@ -27,7 +27,6 @@ class ScriptsGUI:
         
         if file == "":
             return
-        
         try:
             # Convert file location into a module that can be called and add to dict
             spec = importlib.util.spec_from_file_location("runTest", file)

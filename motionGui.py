@@ -2,9 +2,11 @@ from PyQt5 import QtGui, uic, QtCore
 from PyQt5.QtWidgets import QFileDialog
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
-import sys
+import sys, os
 import numpy as np
 import c3d
+import cv2
+
 from extensions.GLTextItem import GLTextItem
 from scriptsGui import ScriptsGUI
 
@@ -87,6 +89,9 @@ class MotionGUI:
         
         self.btScripts = self.window.findChild(QtGui.QPushButton, "btScripts")
         self.btScripts.clicked.connect(self.openScripts)
+        
+        self.btRecord = self.window.findChild(QtGui.QPushButton, "btRecord")
+        self.btRecord.clicked.connect(self.recordPlot)
 
         self.scripts = ScriptsGUI(self)
 
@@ -156,6 +161,23 @@ class MotionGUI:
             
     def openScripts(self):
         self.scripts.window.show()
+        
+    def recordPlot(self):
+        
+        if not os.path.exists("./temp/"):
+            os.mkdir("./temp")
+        
+        out = cv2.VideoWriter("./test.mp4", cv2.VideoWriter_fourcc(*'DIVX'), 30, (800, 600))
+        for i in range(self.slideStart.value(), self.slideEnd.value()):
+            self.frame = i
+            self.plotData()
+            d = self.plot.renderToArray((800, 600))
+            pg.makeQImage(d).save("./temp/test" + str(i) + ".png")
+            img = cv2.imread("./temp/test" + str(i) + ".png")
+            out.write(img)
+        for i in range(self.slideStart.value(), self.slideEnd.value()):
+            os.remove("./temp/test" + str(i) + ".png")
+        out.release()
     
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
