@@ -13,7 +13,6 @@ def parseData(data = None):
     # This example function simply inverts the x and y positions of all particles in the frame
  
     for i in range(0, len(data)):
-        data[i][0] *= -1
-        data[i][1] *= -1
+        data[i] = (-1 * data[i][0], -1 * data[i][1], data[i][2])
     
     return data
