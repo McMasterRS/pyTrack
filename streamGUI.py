@@ -26,13 +26,14 @@ class MotionGUI:
         self.window.show()
         
         self.plot = self.window.findChild(gl.GLViewWidget, "plot")
-        self.plot.setCameraPosition(distance = 2500)
+        self.plot.setCameraPosition(distance = 3000)
         self.scatter = gl.GLScatterPlotItem(pos = self.data)
         self.plot.addItem(self.scatter)
         
         self.frame = 0
         
         self.tbIP = self.window.findChild(QtGui.QLineEdit, "tbIP")
+        self.tbIP.setText("127.0.0.1")
         
         self.btStream = self.window.findChild(QtGui.QPushButton, "btStream")
         self.btStream.clicked.connect(self.loadStream)
@@ -105,5 +106,5 @@ if __name__ == '__main__':
     loop = QSelectorEventLoop(app)
     asyncio.set_event_loop(loop)
     gui = MotionGUI()
-    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-        QtGui.QApplication.instance().exec_()
+    #if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+    QtGui.QApplication.instance().exec_()
