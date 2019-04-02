@@ -43,6 +43,10 @@ class MotionGUI:
         
         self.btRecord = self.window.findChild(QtGui.QPushButton, "btRecord")
         self.btRecord.clicked.connect(self.recordPlot)
+        self.btRecord.setText("Record Data")
+        self.recordStyle = self.btRecord.styleSheet()
+        self.recording = False
+        self.out = []
 
         self.scripts = ScriptsGUI(self)
 
@@ -69,36 +73,41 @@ class MotionGUI:
         
     def onPacket(self, packet):
         self.data = []
-        #print("Framenumber: {}".format(packet.framenumber))
         header, markers = packet.get_3d_markers()
-        #print("Component info: {}".format(header))
         for marker in markers:
-            #print("\t", marker)
             self.data.append((marker.x, marker.y, marker.z))
         data = self.scripts.parseData(self.data)
         self.scatter.setData(pos = np.array(data))
         
-              
+        if self.recording:
+            self.out.append(data)
+                     
     def openScripts(self):
         self.scripts.window.show()
         
     def recordPlot(self):
         
-        if not os.path.exists("./temp/"):
-            os.mkdir("./temp")
-        
-        out = cv2.VideoWriter("./test.mp4", cv2.VideoWriter_fourcc(*'DIVX'), 30, (800, 600))
-        for i in range(self.slideStart.value(), self.slideEnd.value()):
-            self.frame = i
-            self.plotData()
-            d = self.plot.renderToArray((800, 600))
-            pg.makeQImage(d).save("./temp/test" + str(i) + ".png")
-            img = cv2.imread("./temp/test" + str(i) + ".png")
-            out.write(img)
-        for i in range(self.slideStart.value(), self.slideEnd.value()):
-            os.remove("./temp/test" + str(i) + ".png")
-        out.release()
-    
+        if self.recording:
+            self.btRecord.setText("Record Data")
+            self.btRecord.setStyleSheet(self.recordStyle)
+            self.recording = False
+
+            dialog = QFileDialog()
+            fl = dialog.getSaveFileName(self.window, "Save Recorded Data", "", "NumPy file (*.npy)")
+            if fl == None:
+                return
+            
+            #np.save(fl, self.data)
+            np.array(self.data).tofile(fl[0])
+        else:
+            self.btRecord.setText("Stop Recording")
+            self.btRecord.setStyleSheet("background-color: red")
+            self.data = []
+            if not os.path.exists("./temp/"):
+                os.mkdir("./temp")
+            self.recording = True
+            self.frame = 0
+
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':
     import sys
