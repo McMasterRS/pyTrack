@@ -22,16 +22,18 @@ class MotionGUI:
         self.window = uic.loadUi("./ui/motionGui.ui")
         self.window.show()
         
-        # TODO - Add data validation to this to make sure it gets a valid file
-        
         dialog = QFileDialog()
-        fl = dialog.getOpenFileName(self.window, "Open File")[0]
-        #fl = "./testData/Eb015pi.c3d"
-        reader = c3d.Reader(open(fl, 'rb'))
+        fl = dialog.getOpenFileName(self.window, "Open File", "","C3D file (*c3d);;NumPy file (*.npy)")[0]
+        self.posNP = []
+
+        if fl[-3:] == "c3d":
+            reader = c3d.Reader(open(fl, 'rb'))
             
-        for i, points, analog in reader.read_frames():
-            data.append(points[:, 0:3])
-        self.posNP = np.array(data)
+            for i, points, analog in reader.read_frames():
+                data.append(points[:, 0:3])
+            self.posNP = np.array(data)
+        elif fl[-3:] == "npy":
+            self.posNP = np.load(fl)
         self.nameList = []
         for i, item in enumerate(self.posNP[0]):
             self.nameList.append(str(i))
@@ -49,16 +51,16 @@ class MotionGUI:
         self.frame = 0
         
         self.slideFrame = self.window.findChild(QtGui.QSlider, "slideFrame")
-        self.slideFrame.setMaximum(len(data)-1)
+        self.slideFrame.setMaximum(len(self.posNP)-1)
         self.slideFrame.sliderMoved.connect(self.setFrame)
         
         self.slideStart = self.window.findChild(QtGui.QSlider, "slideStart")
-        self.slideStart.setMaximum(len(data)-1)
+        self.slideStart.setMaximum(len(self.posNP)-1)
         self.slideStart.sliderMoved.connect(self.setFrameMin)
         
         self.slideEnd = self.window.findChild(QtGui.QSlider, "slideEnd")
-        self.slideEnd.setMaximum(len(data)-1)
-        self.slideEnd.setValue(len(data)-1)
+        self.slideEnd.setMaximum(len(self.posNP)-1)
+        self.slideEnd.setValue(len(self.posNP)-1)
         self.slideEnd.sliderMoved.connect(self.setFrameMax)
         
         self.pointList = self.window.findChild(QtGui.QListWidget, "pointList")
@@ -92,6 +94,7 @@ class MotionGUI:
         
         self.btRecord = self.window.findChild(QtGui.QPushButton, "btRecord")
         self.btRecord.clicked.connect(self.recordPlot)
+        self.recordStyle = self.btRecord.styleSheet()
 
         self.scripts = ScriptsGUI(self)
 
@@ -163,11 +166,16 @@ class MotionGUI:
         self.scripts.window.show()
         
     def recordPlot(self):
-        
+        self.btRecord.setText("Recording")
+        self.btRecord.setStyleSheet("background-color: red")
         if not os.path.exists("./temp/"):
             os.mkdir("./temp")
+        dialog = QFileDialog()
+        fl = dialog.getSaveFileName(self.window, "Save Video", "", "MP4 file (*.mp4)")
         
-        out = cv2.VideoWriter("./test.mp4", cv2.VideoWriter_fourcc(*'DIVX'), 30, (800, 600))
+        if fl[0] == "":
+                return
+        out = cv2.VideoWriter(fl[0], cv2.VideoWriter_fourcc(*'DIVX'), 30, (800, 600))
         for i in range(self.slideStart.value(), self.slideEnd.value()):
             self.frame = i
             self.plotData()
@@ -178,6 +186,8 @@ class MotionGUI:
         for i in range(self.slideStart.value(), self.slideEnd.value()):
             os.remove("./temp/test" + str(i) + ".png")
         out.release()
+        self.btRecord.setText("Record")
+        self.btRecord.setStyleSheet(self.recordStyle)
     
 ## Start Qt event loop unless running in interactive mode.
 if __name__ == '__main__':

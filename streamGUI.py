@@ -94,11 +94,10 @@ class MotionGUI:
 
             dialog = QFileDialog()
             fl = dialog.getSaveFileName(self.window, "Save Recorded Data", "", "NumPy file (*.npy)")
-            if fl == None:
+            if fl[0] == "":
                 return
-            
-            #np.save(fl, self.data)
-            np.array(self.data).tofile(fl[0])
+            print(self.out)
+            np.save(fl[0], self.out)
         else:
             self.btRecord.setText("Stop Recording")
             self.btRecord.setStyleSheet("background-color: red")
