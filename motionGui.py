@@ -34,6 +34,8 @@ class MotionGUI:
             self.posNP = np.array(data)
         elif fl[-3:] == "npy":
             self.posNP = np.load(fl)
+        else:
+            print("ERROR, INCORRECT FILE TYPE")
         self.nameList = []
         for i, item in enumerate(self.posNP[0]):
             self.nameList.append(str(i))
@@ -166,8 +168,6 @@ class MotionGUI:
         self.scripts.window.show()
         
     def recordPlot(self):
-        self.btRecord.setText("Recording")
-        self.btRecord.setStyleSheet("background-color: red")
         if not os.path.exists("./temp/"):
             os.mkdir("./temp")
         dialog = QFileDialog()
@@ -175,6 +175,8 @@ class MotionGUI:
         
         if fl[0] == "":
                 return
+        self.btRecord.setText("Recording")
+        self.btRecord.setStyleSheet("background-color: red")
         out = cv2.VideoWriter(fl[0], cv2.VideoWriter_fourcc(*'DIVX'), 30, (800, 600))
         for i in range(self.slideStart.value(), self.slideEnd.value()):
             self.frame = i

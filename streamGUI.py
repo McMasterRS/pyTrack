@@ -86,17 +86,14 @@ class MotionGUI:
         self.scripts.window.show()
         
     def recordPlot(self):
-        
         if self.recording:
-            self.btRecord.setText("Record Data")
-            self.btRecord.setStyleSheet(self.recordStyle)
-            self.recording = False
-
             dialog = QFileDialog()
             fl = dialog.getSaveFileName(self.window, "Save Recorded Data", "", "NumPy file (*.npy)")
             if fl[0] == "":
                 return
-            print(self.out)
+            self.btRecord.setText("Record Data")
+            self.btRecord.setStyleSheet(self.recordStyle)
+            self.recording = False
             np.save(fl[0], self.out)
         else:
             self.btRecord.setText("Stop Recording")

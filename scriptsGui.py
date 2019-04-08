@@ -25,16 +25,16 @@ class ScriptsGUI:
         dialog = QFileDialog()
         file = dialog.getOpenFileName(self.window, "Open Script", filter = ("Python files (*.py)"))[0]
         
-        #if file == "":
-        #    return
-        #try:
+        if file == "":
+            return
+        try:
             # Convert file location into a module that can be called and add to dict
-        spec = importlib.util.spec_from_file_location("runTest", file)
-        self.scriptList[os.path.basename(file)[:-3]] = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(self.scriptList[os.path.basename(file)[:-3]])   
-        #except:
-        #    print("Error importing script")
-        #    return
+            spec = importlib.util.spec_from_file_location("runTest", file)
+            self.scriptList[os.path.basename(file)[:-3]] = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(self.scriptList[os.path.basename(file)[:-3]])   
+        except Exception as e:
+            print("Error importing script: " + str(e))
+            return
         
         if not "parseData" in dir(self.scriptList[os.path.basename(file)[:-3]]):
             print("Error: Script does not contain parseData function")
