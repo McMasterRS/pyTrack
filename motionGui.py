@@ -12,6 +12,8 @@ from scriptsGui import ScriptsGUI
 
 class MotionGUI:
     def __init__(self):
+        # Setup style for combo boxs so that they maintain the same apperance
+        # regardless of if they're selected or not
         self.comboStyle =  """ QListWidget:item:selected:active {background: #cde8ff; color: black}
                                QListWidget:item:selected:!active {background: gray; color: black}
                                QListWidget:item:selected:disabled {background: gray; color: black}
@@ -19,9 +21,11 @@ class MotionGUI:
                            """
         data = []
         
+        # Load UI
         self.window = uic.loadUi("./ui/motionGui.ui")
         self.window.show()
         
+        # Get motion data
         dialog = QFileDialog()
         fl = dialog.getOpenFileName(self.window, "Open File", "","C3D file (*c3d);;NumPy file (*.npy)")[0]
         self.posNP = []
@@ -36,10 +40,13 @@ class MotionGUI:
             self.posNP = np.load(fl)
         else:
             print("ERROR, INCORRECT FILE TYPE")
+        
+        # Name points. Could do this better but numbers work fine
         self.nameList = []
         for i, item in enumerate(self.posNP[0]):
             self.nameList.append(str(i))
         
+        # Setup plotting window
         self.plot = self.window.findChild(gl.GLViewWidget, "plot")
         self.plot.setCameraPosition(distance = np.max(self.posNP) * 1.1)
         self.scatter = gl.GLScatterPlotItem(pos = self.posNP[0])
@@ -52,6 +59,8 @@ class MotionGUI:
         
         self.frame = 0
         
+        # Slide bars. Would idealy like to replace min/max ones with a single
+        # bar that can set the min/max values that the sweeper can move between
         self.slideFrame = self.window.findChild(QtGui.QSlider, "slideFrame")
         self.slideFrame.setMaximum(len(self.posNP)-1)
         self.slideFrame.sliderMoved.connect(self.setFrame)
@@ -65,12 +74,14 @@ class MotionGUI:
         self.slideEnd.setValue(len(self.posNP)-1)
         self.slideEnd.sliderMoved.connect(self.setFrameMax)
         
+        # List of datapoints. Any selected points will appear in the main window
         self.pointList = self.window.findChild(QtGui.QListWidget, "pointList")
         for name in self.nameList:
             item = QtGui.QListWidgetItem(name, self.pointList)
         self.pointList.selectAll()
         self.pointList.setStyleSheet(self.comboStyle)
 
+        # point linking system
         self.linkList = self.window.findChild(QtGui.QTableWidget, "linkList")
         self.linkList.setStyleSheet(self.comboStyle)
         
@@ -88,6 +99,7 @@ class MotionGUI:
         
         self.links = []
         
+        # Option and script buttons
         self.ckPause = self.window.findChild(QtGui.QCheckBox, "ckPause")
         self.ckText = self.window.findChild(QtGui.QCheckBox, "ckText")
         
@@ -100,16 +112,18 @@ class MotionGUI:
 
         self.scripts = ScriptsGUI(self)
 
+        # Setup system to refresh plot at 30fps
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
         self.timer.start(30)
 
     def update(self):
+        # If not paused
         if not self.ckPause.checkState():
             self.frame += 1
+            # Reset the frame if past the end point
             if self.frame > self.slideEnd.value():
                 self.frame = self.slideStart.value()
-                
         self.slideFrame.setValue(self.frame)
         self.plotData()
         
@@ -126,11 +140,14 @@ class MotionGUI:
             lines = np.array(lines)
             self.lines.setData(pos = lines)
         
+        # Add text lables
         if self.ckText.checkState():
             text = [str(x.row()) for x in self.pointList.selectedIndexes()]
             self.text.setData(data[pos], text)
         else:
             self.text.setData([],[])
+    
+    # These 3 activate when the sliders are moved
     
     def setFrame(self):
         self.frame = self.slideFrame.value()
@@ -142,7 +159,8 @@ class MotionGUI:
     def setFrameMin(self):
         if self.frame < self.slideStart.value():
             self.frame = self.slideStart.value()
-
+            
+    # creates new links between points when link button is pressed
     def linkPoints(self):
         # Make sure that none of the existing links match the new one
         for item in self.links:
@@ -150,12 +168,17 @@ class MotionGUI:
                 return
             if item[1] == self.linkCb1.currentIndex() and item[0] == self.linkCb2.currentIndex():
                 return
-                
+        # Make sure the points are different
+        if self.linkCb1.currentIndex() == self.linkCb2.currentIndex():
+            return
+        
+        # Create new row
         self.links.append([self.linkCb1.currentIndex(), self.linkCb2.currentIndex()])
         self.linkList.insertRow(self.linkList.rowCount())
         self.linkList.setItem(self.linkList.rowCount() - 1, 0, QtGui.QTableWidgetItem(self.linkCb1.currentText()))
         self.linkList.setItem(self.linkList.rowCount() - 1, 1, QtGui.QTableWidgetItem(self.linkCb2.currentText()))
-        
+    
+    # Delete the selected link from the list
     def deleteLink(self):
         if self.linkList.currentRow() >= 0:
             self.links.pop(self.linkList.currentRow())
@@ -168,16 +191,21 @@ class MotionGUI:
         self.scripts.window.show()
         
     def recordPlot(self):
+        # Make the temporary directory
         if not os.path.exists("./temp/"):
             os.mkdir("./temp")
+            
+        # Choose file location
         dialog = QFileDialog()
         fl = dialog.getSaveFileName(self.window, "Save Video", "", "MP4 file (*.mp4)")
-        
         if fl[0] == "":
                 return
+                
+        # Update UI So the user doesnt get confused
         self.btRecord.setText("Recording")
         self.btRecord.setStyleSheet("background-color: red")
         out = cv2.VideoWriter(fl[0], cv2.VideoWriter_fourcc(*'DIVX'), 30, (800, 600))
+        # Loop through each frame and create file. Use created file to make video
         for i in range(self.slideStart.value(), self.slideEnd.value()):
             self.frame = i
             self.plotData()
@@ -185,6 +213,7 @@ class MotionGUI:
             pg.makeQImage(d).save("./temp/test" + str(i) + ".png")
             img = cv2.imread("./temp/test" + str(i) + ".png")
             out.write(img)
+        # Erase image files after creation
         for i in range(self.slideStart.value(), self.slideEnd.value()):
             os.remove("./temp/test" + str(i) + ".png")
         out.release()

@@ -22,6 +22,7 @@ class ScriptsGUI:
         self.scriptList = {}
         
     def addScript(self):
+        # Get file from user
         dialog = QFileDialog()
         file = dialog.getOpenFileName(self.window, "Open Script", filter = ("Python files (*.py)"))[0]
         
@@ -33,13 +34,16 @@ class ScriptsGUI:
             self.scriptList[os.path.basename(file)[:-3]] = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(self.scriptList[os.path.basename(file)[:-3]])   
         except Exception as e:
+            # Shows error if something is wrong with importing the script
             print("Error importing script: " + str(e))
             return
         
+        # Make sure the parseData function is in the directory
         if not "parseData" in dir(self.scriptList[os.path.basename(file)[:-3]]):
             print("Error: Script does not contain parseData function")
             return
             
+        # create row and add to listbox
         rowPosition = self.tbScripts.rowCount()
         self.tbScripts.insertRow(rowPosition)
         chkBoxItem = QtGui.QTableWidgetItem()
@@ -56,6 +60,7 @@ class ScriptsGUI:
             self.scriptList.pop(self.tbScripts.item(self.tbScripts.currentRow(), 1).text())
             self.tbScripts.removeRow(self.tbScripts.currentRow())
             
+    # Run all added scripts
     def parseData(self, oldData):
         data = oldData.copy()
         for row in (row for row in range(0, self.tbScripts.rowCount()) if self.tbScripts.item(row, 0).checkState()):
