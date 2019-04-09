@@ -29,17 +29,18 @@ class ScriptsGUI:
         if file == "":
             return
         try:
-            # Convert file location into a module that can be called and add to dict
+        # Convert file location into a module that can be called and add to dict
             spec = importlib.util.spec_from_file_location("runTest", file)
-            self.scriptList[os.path.basename(file)[:-3]] = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(self.scriptList[os.path.basename(file)[:-3]])   
+            key = file
+            self.scriptList[key] = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(self.scriptList[key])   
         except Exception as e:
             # Shows error if something is wrong with importing the script
             print("Error importing script: " + str(e))
             return
         
         # Make sure the parseData function is in the directory
-        if not "parseData" in dir(self.scriptList[os.path.basename(file)[:-3]]):
+        if not "parseData" in dir(self.scriptList[key]):
             print("Error: Script does not contain parseData function")
             return
             
@@ -57,14 +58,14 @@ class ScriptsGUI:
     def delScript(self):
         # Make sure a row is selected
         if self.tbScripts.currentRow() >= 0:
-            self.scriptList.pop(self.tbScripts.item(self.tbScripts.currentRow(), 1).text())
+            self.scriptList.pop(self.tbScripts.item(self.tbScripts.currentRow(), 2).text())
             self.tbScripts.removeRow(self.tbScripts.currentRow())
             
     # Run all added scripts
     def parseData(self, oldData):
         data = oldData.copy()
         for row in (row for row in range(0, self.tbScripts.rowCount()) if self.tbScripts.item(row, 0).checkState()):
-            script = self.tbScripts.item(row,1).text()
+            script = self.tbScripts.item(row,2).text()
             data = self.scriptList[script].parseData(data)
             
         return data
