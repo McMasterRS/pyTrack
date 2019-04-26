@@ -78,8 +78,10 @@ class MotionGUI:
         self.pointList = self.window.findChild(QtGui.QListWidget, "pointList")
         for name in self.nameList:
             item = QtGui.QListWidgetItem(name, self.pointList)
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
         self.pointList.selectAll()
         self.pointList.setStyleSheet(self.comboStyle)
+        #action = menu.exec_(self.mapToGlobal(pos))
 
         # point linking system
         self.linkList = self.window.findChild(QtGui.QTableWidget, "linkList")
@@ -124,6 +126,16 @@ class MotionGUI:
             # Reset the frame if past the end point
             if self.frame > self.slideEnd.value():
                 self.frame = self.slideStart.value()
+                
+        for i in range(self.pointList.count()):
+            self.nameList[i] = self.pointList.item(i).text()
+            self.linkCb1.setItemText(i, self.nameList[i])
+            self.linkCb2.setItemText(i, self.nameList[i])
+        for i in range(len(self.links)):
+            self.linkList.setItem(i, 0, QtGui.QTableWidgetItem(self.nameList[self.links[i][0]]))
+            self.linkList.setItem(i, 1, QtGui.QTableWidgetItem(self.nameList[self.links[i][1]]))
+
+        
         self.slideFrame.setValue(self.frame)
         self.plotData()
         
@@ -142,7 +154,7 @@ class MotionGUI:
         
         # Add text lables
         if self.ckText.checkState():
-            text = [str(x.row()) for x in self.pointList.selectedIndexes()]
+            text = [self.pointList.item(i.row() ).text() for i in self.pointList.selectedIndexes()]
             self.text.setData(data[pos], text)
         else:
             self.text.setData([],[])
@@ -189,6 +201,9 @@ class MotionGUI:
             
     def openScripts(self):
         self.scripts.window.show()
+        
+    def renameData(self):
+        self.rename.window.show()
         
     def recordPlot(self):
         # Make the temporary directory
