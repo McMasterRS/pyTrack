@@ -1,5 +1,8 @@
 from PyQt5 import QtGui, uic, QtCore
 from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 import sys, os
@@ -8,6 +11,7 @@ import c3d
 import cv2
 
 from optFlow import OptFlow
+from settingsGui import SettingsGUI
 
 
 class ControlGUI():
@@ -15,7 +19,7 @@ class ControlGUI():
     def __init__(self):
         self.window = uic.loadUi("./ui/controlUI.ui")
         self.window.show()
-        self.flow = OptFlow()
+        self.flow = OptFlow(self.window)
         
         self.btShow = self.window.findChild(QtGui.QPushButton, "btShow")
         self.btShow.clicked.connect(self.viewStream)
@@ -25,18 +29,31 @@ class ControlGUI():
         self.btStart.clicked.connect(self.startStream)
         self.running = False
         
+        self.btLoad = self.window.findChild(QtGui.QPushButton, "btLoad")
+        self.btLoad.clicked.connect(self.loadFile)
+        
+        self.cbTrack = self.window.findChild(QtGui.QCheckBox, "cbTrack")
+        self.cbPause = self.window.findChild(QtGui.QCheckBox, "cbPause")
+        
         self.tbParts = self.window.findChild(QtGui.QTableWidget, "tbParts")
         
         self.btDelete = self.window.findChild(QtGui.QPushButton, "btDelete")
         self.btDelete.clicked.connect(self.removeItem)
         
+        self.btSettings = self.window.findChild(QtGui.QPushButton, "btSettings")
+        self.settingsGui = SettingsGUI(self)
+        self.btSettings.clicked.connect(self.settingsGui.window.show)
+
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(1)
+        self.timer.start(0)
         
     def update(self):
+    
+        vals = self.settingsGui.getValues()
+        self.flow.updateSettings(vals)
         if self.shown == True:
-            self.flow.update()
+            self.flow.update(self.cbTrack.isChecked(), self.cbPause.isChecked())
             
             for i, item in enumerate(self.flow.participents):
                 if self.tbParts.rowCount() <= i:
@@ -44,6 +61,22 @@ class ControlGUI():
                     self.tbParts.setItem(i, 0, QtGui.QTableWidgetItem(item.name))
                 self.tbParts.item(i, 0).setBackground(QtGui.QColor(item.color[2], item.color[1], item.color[0], 255))
                 
+        if len(self.flow.participents) == 0:
+            self.btDelete.setEnabled(False)
+            self.btStart.setEnabled(False)
+        else:
+            self.btDelete.setEnabled(True)
+            self.btStart.setEnabled(True)
+            
+            
+    def loadFile(self):
+        self.btShow.setText("Show Video")
+        self.shown = False
+        self.flow.ANY_FEEDBACK = False
+        cv2.destroyAllWindows()
+        
+        f = QtGui.QFileDialog.getOpenFileName()[0]
+        self.flow = OptFlow(self.window, f)
             
     def viewStream(self):
         if not self.running:
@@ -52,7 +85,7 @@ class ControlGUI():
                 self.shown = False
                 self.flow.ANY_FEEDBACK = False
                 cv2.destroyAllWindows()
-                self.flow.vs.stop() if self.flow.args.get("video", None) is None else self.flow.vs.release()
+                #self.flow.vs.stop() if self.flow.args.get("video", None) is None else self.flow.vs.release()
             else:
                 self.btShow.setText("Hide Video")
                 self.shown = True
@@ -81,6 +114,5 @@ class ControlGUI():
 if __name__ == '__main__':
     import sys
     app = QtGui.QApplication(sys.argv)
-    #app.setQuitOnLastWindowClosed(False)
     gui = ControlGUI()
     sys.exit(app.exec_())
