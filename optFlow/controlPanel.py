@@ -68,15 +68,21 @@ class ControlGUI():
             self.btDelete.setEnabled(True)
             self.btStart.setEnabled(True)
             
-            
     def loadFile(self):
-        self.btShow.setText("Show Video")
-        self.shown = False
-        self.flow.ANY_FEEDBACK = False
-        cv2.destroyAllWindows()
+
         
         f = QtGui.QFileDialog.getOpenFileName()[0]
-        self.flow = OptFlow(self.window, f)
+        if f is not "":
+            self.btShow.setText("Show Video")
+            self.shown = False
+            self.flow.ANY_FEEDBACK = False
+            cv2.destroyAllWindows()
+        
+            self.flow = OptFlow(self.window, f)
+            
+            while self.tbParts.rowCount() > 0:
+                self.tbParts.removeRow(0)
+            
             
     def viewStream(self):
         if not self.running:
@@ -85,7 +91,7 @@ class ControlGUI():
                 self.shown = False
                 self.flow.ANY_FEEDBACK = False
                 cv2.destroyAllWindows()
-                #self.flow.vs.stop() if self.flow.args.get("video", None) is None else self.flow.vs.release()
+                self.flow.vs.stop() if self.flow.videoType is "cam" else self.flow.vs.release()
             else:
                 self.btShow.setText("Hide Video")
                 self.shown = True
@@ -108,7 +114,12 @@ class ControlGUI():
     def removeItem(self):
         self.flow.colorlist.append(self.flow.participents[self.tbParts.currentRow()].color)
         self.flow.participents.pop(self.tbParts.currentRow())
-        self.tbParts.removeRow(self.tbParts.currentRow())
+        
+        # Makes sure that the correct row gets deleted even if the listbox isnt focused
+        if self.tbParts.currentRow() > 0:
+            self.tbParts.removeRow(self.tbParts.currentRow())
+        else:
+            self.tbParts.removeRow(0)
         
         
 if __name__ == '__main__':

@@ -20,8 +20,8 @@ class Participant():
     
         self.name = "Region"
         
-        self.xRange = np.array([x, x])
-        self.yRange = np.array([y, y])
+        self.xRange = np.array([x, x+1])
+        self.yRange = np.array([y, y+1])
         
         self.color = color
         
@@ -33,9 +33,12 @@ class Participant():
         
         self.flow = []
         
-        
     def setUp(self, x, y):  
-        
+        # Creates a 1x1px box if the user just clicks and releases in the same spot
+        if x == self.xRange[0]:
+            x += 1
+        if y == self.yRange[0]:
+            y += 1
         self.xRange = np.array(range(min(self.xRange[0], x), max(self.xRange[0], x)))
         self.yRange = np.array(range(min(self.yRange[0], y), max(self.yRange[0], y)))
         
@@ -73,7 +76,7 @@ class OptFlow():
         # if the video argument is None, then we are reading from webcam
         if video is None:
             self.vs = VideoCaptureAsync(src=0)
-            self.vs.start()
+            #self.vs.start()
             self.videoType = "cam"
         # otherwise, we are reading from a video file
         else:
@@ -256,7 +259,7 @@ class OptFlow():
         
     def closeStream(self):
         if self.videoType == "cam":
-            self.vs.stop() if self.args.get("video", None) is None else self.vs.release()
+            self.vs.stop()
         else:
             self.vs.release()
             
@@ -266,8 +269,15 @@ class OptFlow():
         
         buttonReply = QMessageBox.question(self.master, '', "Save test data?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if buttonReply == QMessageBox.Yes:
-            f = QtGui.QFileDialog.getSaveFileName(self.master, "Save File")[0]
-            np.save(f, self.data)
+            f = QtGui.QFileDialog.getSaveFileName(self.master, "Save File", "", "AVI file (*.avi)")[0]
+            
+            if f is not "":
+                height, width, layers = self.data[-1].shape
+                mov = cv2.VideoWriter(f, cv2.VideoWriter_fourcc(*'DIVX'), np.mean(1.0 / np.diff(self.TIME)), (width, height), True)
+                
+                for frame in self.data:
+                    mov.write(frame)
+                mov.release()
 
         if self.MOVT_PLOTTING:
             self.runVis()
