@@ -28,23 +28,16 @@ class ScriptsGUI:
         
         if file == "":
             return
-       # try:
+        try:
         # Convert file location into a module that can be called and add to dict
-            #spec = importlib.util.spec_from_file_location("example", file)
-        key = file
-            #self.scriptList[key] = importlib.util.module_from_spec(spec)
-            #spec.loader.exec_module(self.scriptList[key])
-        #self.scriptList[file] = __import__("scripts." + os.path.basename(file)[:-3], globals(), locals(), [], 0)
-        #except Exception as e:
+            spec = importlib.util.spec_from_file_location("getObj", file)
+            obj = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(obj)
+            self.scriptList[file] = obj.getObj()
+        except Exception as e:
             # Shows error if something is wrong with importing the script
-        #    print("Error importing script: " + str(e))
-        #    return
-        
-        # Make sure the parseData function is in the directory
-        self.scriptList[file].parseData()
-        #if not "parseData" in dir(self.scriptList[key]):
-            #print("Error: Script does not contain parseData function")
-            #return
+            print("Error importing script: " + str(e))
+            return
             
         # create row and add to listbox
         rowPosition = self.tbScripts.rowCount()

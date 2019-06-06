@@ -1,3 +1,7 @@
+def getObj():
+    return example()
+
+
 class example():
     def __init__(self):
         self.name = "example"

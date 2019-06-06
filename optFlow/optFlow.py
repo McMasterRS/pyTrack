@@ -1,6 +1,5 @@
 # import the necessary packages
 from imutils.video import VideoStream
-import argparse
 import datetime
 import time
 import numpy as np
@@ -135,7 +134,6 @@ class OptFlow():
         
     def update(self, trackState, pauseState):
         
-        
         if not pauseState: 
             vidRead = self.vs.read()[1]
             if vidRead is None:
@@ -237,7 +235,7 @@ class OptFlow():
         camImg = self.frame01.copy()
         for i, item in enumerate(self.participents):
             cv2.rectangle(camImg, (item.xRange[0], item.yRange[0]), (item.xRange[-1], item.yRange[-1]), item.color, thickness = 2)
-        
+
         if self.showFPS:
             cv2.putText(camImg, "FPS: " + str(1.0 / (self.TIME[-1] - self.TIME[-2])), (10, bgr.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
         
@@ -283,6 +281,8 @@ class OptFlow():
             self.runVis()
         
     def runVis(self):
+    
+        # Framerate
         plt.subplot(311)
         DTIME = np.diff(self.TIME)
         SR = np.divide(1,DTIME) 
@@ -290,12 +290,14 @@ class OptFlow():
         plt.ylabel('Frame acquisition rate, fps')
         plt.plot(self.TIME[1:],SR,'-')   
 
+        # Magnitude of optic flow
         plt.subplot(312)
         plt.xlabel('Time [s]')
         plt.ylabel('|X| [px]')
         for item in self.participents:
             plt.plot(self.TIME,item.XYmag,'-')
 
+        # Angle of optic flow
         plt.subplot(313)
         plt.xlabel('Time [s]')
         plt.ylabel(r"$ \bar \phi $ [rad]")

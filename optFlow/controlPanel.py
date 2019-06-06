@@ -69,8 +69,6 @@ class ControlGUI():
             self.btStart.setEnabled(True)
             
     def loadFile(self):
-
-        
         f = QtGui.QFileDialog.getOpenFileName()[0]
         if f is not "":
             self.btShow.setText("Show Video")
@@ -81,8 +79,8 @@ class ControlGUI():
             self.flow = OptFlow(self.window, f)
             
             while self.tbParts.rowCount() > 0:
-                self.tbParts.removeRow(0)
-            
+                self.flow.colorlist.append(self.flow.participents[0].color)
+                self.tbParts.removeRow(0)    
             
     def viewStream(self):
         if not self.running:
@@ -119,8 +117,7 @@ class ControlGUI():
         if self.tbParts.currentRow() > 0:
             self.tbParts.removeRow(self.tbParts.currentRow())
         else:
-            self.tbParts.removeRow(0)
-        
+            self.tbParts.removeRow(0)      
         
 if __name__ == '__main__':
     import sys
